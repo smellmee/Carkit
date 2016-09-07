@@ -1,0 +1,12 @@
+OK = FF02FD
+Vasen = c
+Ylös = FF629D
+Oikea = FFC23D
+Alas = FFA857
+1 = FF6897
+2 = FF9867
+3 = FFB04F
+* = FF42BD
+Jatkuva painaminen = FFFFFFFF
+
+https://arduino-info.wikispaces.com/IR-RemoteControl?responseToken=088a8b7942b65eee70bb50aae6a17e6c5
