@@ -53,72 +53,41 @@ void setup(){
 void loop() {
   if (irrecv.decode(&results)) {
     
-    if(results.value == OK.value)
-    {
-      if(speed == 255)
-      {
-       speed = 0; 
-      }else
-      {
-       speed = 255; 
-      }
-    }
+    if(results.value == OK.value) {if(speed == 255){Stop();}
+    else{Start();}}
+
     if(results.value == UP.value){dir = 1;}   
     if(results.value == DOWN.value){dir = 0;}
+    if(results.value == RIGHT.value){/*Käännytään oikealle*/}
+    if(results.value == LEFT.value){/*Käännytään vasemmalle*/}
     
+    if(results.value == RIGHT.value && speed != 0){/*Käännytään oikealle sammuttamalla 1 oikean puolen moottori*/}
+    if(results.value == LEFT.value && speed != 0){/*Käännytään vasemmalle sammuttamalla 1 vasemman puolen moottori*/}
     
     analogWrite(speedPinA,255 - speed);
     analogWrite(speedPinB,255 - speed);
     if(dir == 1)
     {
-    digitalWrite(dir1PinA, LOW); //Kääntää eteenpäin
-    digitalWrite(dir2PinA, HIGH); 
-    digitalWrite(dir1PinB, HIGH);
-    digitalWrite(dir2PinB, LOW);
-    }else
+      digitalWrite(dir1PinA, LOW); //Kääntää eteenpäin
+      digitalWrite(dir2PinA, HIGH); 
+      digitalWrite(dir1PinB, HIGH);
+      digitalWrite(dir2PinB, LOW);
+    }
+    else
     {
-    digitalWrite(dir1PinA, HIGH); // Kääntää taaksepäin
-    digitalWrite(dir2PinA, LOW);
-    digitalWrite(dir1PinB, LOW);
-    digitalWrite(dir2PinB, HIGH);
+      digitalWrite(dir1PinA, HIGH); // Kääntää taaksepäin
+      digitalWrite(dir2PinA, LOW);
+      digitalWrite(dir1PinB, LOW);
+      digitalWrite(dir2PinB, HIGH);
     }
     irrecv.resume(); // Receive the next value
   }
- 
-//    if (irrecv.decode(&results)) {
-//    Serial.println(results.value, HEX);
-//    irrecv.resume(); // Receive the next value
-//  }
 }
-
-
-
-
-
-
- /*analogWrite(speedPinA,speed); //Oikean puolen renkaat
-  analogWrite(speedPinB,255 - speed); //Vasemman puolen renkaat
-  // set direction
-  if(1 == dir) {
-    digitalWrite(dir1PinA, LOW);
-    digitalWrite(dir2PinA, HIGH); //Kääntää eteenpäin
-    digitalWrite(dir1PinB, HIGH);
-    digitalWrite(dir2PinB, LOW);
-  }else{
-    digitalWrite(dir1PinA, HIGH); // Kääntää taaksepäin
-    digitalWrite(dir2PinA, LOW);
-    digitalWrite(dir1PinB, LOW);
-    digitalWrite(dir2PinB, HIGH);
-  }
-  if(millis()-time>5000) {
-    time = millis();
-    speed += 20;
-    if(speed > 255){
-      speed = 0;
-    }
-    if(1==dir){
-      dir = 0;
-    }else{
-      dir = 1;
-    }
-  }*/
+void Stop()
+{
+  speed = 0;
+}
+void Start()
+{
+  speed = 255;
+}
