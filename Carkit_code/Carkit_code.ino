@@ -30,6 +30,8 @@ decode_results STAR;
 decode_results CONTINUOUS;
 decode_results old_value;
 
+boolean aja_kokoajan = false;
+boolean cont = false;
 void setup(){
   Serial.begin(9600);
   UP.value = 0xFF629D;
@@ -48,7 +50,7 @@ void setup(){
   pinMode(dir1PinB, OUTPUT);
   pinMode(dir2PinB, OUTPUT);
   pinMode(speedPinB, OUTPUT);
-  speed = 255;
+  speed = 0;
   dir = 1;
   irrecv.enableIRIn(); // Start the receiver
 }
@@ -57,25 +59,20 @@ void loop() {
   
   if (irrecv.decode(&results)) {
     
-    if(results.value == CONTINUOUS.value){
-     Serial.println("CONTINUOUS"); 
-    }
-    
     if(results.value == OK.value)
     {
-      dir = 4;
-      if(speed != 0)
-      {
+      if(speed == 255){
        speed = 0; 
       }else
       {
        speed = 255; 
       }
     }
-    if(results.value == UP.value){old_value.value = results.value;}   
-    if(results.value == DOWN.value){old_value.value = results.value;}
-    if(results.value == LEFT.value) {old_value.value = results.value;}
-    if(results.value == RIGHT.value) {old_value.value = results.value;}
+    
+    if(results.value == UP.value){old_value.value = results.value; dir = 1;}   
+    if(results.value == DOWN.value){old_value.value = results.value; dir = 0;}
+    if(results.value == LEFT.value) {old_value.value = results.value; dir = 3;}
+    if(results.value == RIGHT.value) {old_value.value = results.value; dir = 2;}
     
     /*if(results.value == CONTINUOUS.value){
       if(old_value.value == UP.value){
@@ -91,16 +88,21 @@ void loop() {
       dir = 2;
       }
     }*/
-    if(results.value == CONTINUOUS.value)
+    
+    /*if(aja_kokoajan == true){
+      speed = 0;
+    }else if(results.value == CONTINUOUS.value)
     {
+      speed = 0;
       if(old_value.value == UP.value)
       {
         dir = 1;
       }
       
-    }
-    
-        
+    }else{
+     speed = 255; 
+    }*/
+   
     analogWrite(speedPinA,255 - speed);
     analogWrite(speedPinB,255 - speed);
     if(dir == 1)
@@ -109,21 +111,21 @@ void loop() {
     digitalWrite(dir2PinA, HIGH); 
     digitalWrite(dir1PinB, HIGH);
     digitalWrite(dir2PinB, LOW);
-    }if(dir == 0)
+    }else if(dir == 0)
     {
     digitalWrite(dir1PinA, HIGH); // Kääntää taaksepäin
     digitalWrite(dir2PinA, LOW);
     digitalWrite(dir1PinB, LOW);
     digitalWrite(dir2PinB, HIGH);
     }
-    if(dir == 3)
+    else if(dir == 3)
     {
     digitalWrite(dir1PinA, HIGH); // Kääntää vasempaan
     digitalWrite(dir2PinA, LOW);
     digitalWrite(dir1PinB, HIGH);
     digitalWrite(dir2PinB, LOW);
     }
-    if(dir == 2)
+    else if(dir == 2)
     {
     digitalWrite(dir1PinA, LOW); // Kääntää oikeaan
     digitalWrite(dir2PinA, HIGH);
@@ -132,46 +134,11 @@ void loop() {
     }
     
     irrecv.resume(); // Receive the next value
-  }else
-  {
-   speed = 255; 
   }
   
- 
-//    if (irrecv.decode(&results)) {
-//    Serial.println(results.value, HEX);
-//    irrecv.resume(); // Receive the next value
-//  }
 }
 
 
 
 
 
-
- /*analogWrite(speedPinA,speed); //Oikean puolen renkaat
-  analogWrite(speedPinB,255 - speed); //Vasemman puolen renkaat
-  // set direction
-  if(1 == dir) {
-    digitalWrite(dir1PinA, LOW);
-    digitalWrite(dir2PinA, HIGH); //Kääntää eteenpäin
-    digitalWrite(dir1PinB, HIGH);
-    digitalWrite(dir2PinB, LOW);
-  }else{
-    digitalWrite(dir1PinA, HIGH); // Kääntää taaksepäin
-    digitalWrite(dir2PinA, LOW);
-    digitalWrite(dir1PinB, LOW);
-    digitalWrite(dir2PinB, HIGH);
-  }
-  if(millis()-time>5000) {
-    time = millis();
-    speed += 20;
-    if(speed > 255){
-      speed = 0;
-    }
-    if(1==dir){
-      dir = 0;
-    }else{
-      dir = 1;
-    }
-  }*/
