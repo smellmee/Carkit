@@ -1,7 +1,9 @@
 /*Written by Tatu Piippo on 1.9.2016*/
-
 #include <IRremote.h>
-
+//Ultraäänisensori
+int trigPin = 2;
+int echoPin = 3;
+int minDistance = 5;
 //motor A
 int dir1PinA = 2;
 int dir2PinA = 3;
@@ -10,25 +12,17 @@ int speedPinA = 9;
 int dir1PinB = 4;
 int dir2PinB = 5;
 int speedPinB = 10;
+//Nopeus ja suunta
 int speed;
 int dir;
+//Kaukosäädin
 int RECV_PIN = 11;
 long unsigned int IRcode;
-
 IRrecv irrecv(RECV_PIN);
+decode_results results, OK, UP, DOWN, RIGHT, LEFT, ONE, TWO, THREE, STAR, CONTINUOUS;
 
-decode_results results;
-decode_results OK;
-decode_results UP;
-decode_results DOWN;
-decode_results RIGHT;
-decode_results LEFT;
-decode_results ONE;
-decode_results TWO;
-decode_results THREE;
-decode_results STAR;
-decode_results CONTINUOUS;
 void setup(){
+  //Kaukosäädin
   UP.value = 0xFF629D;
   OK.value = 0xFF02FD;
   DOWN.value = 0xFFA857;
@@ -39,6 +33,7 @@ void setup(){
   THREE.value = 0xFFB04F;
   STAR.value = 0xFF42BD;
   CONTINUOUS.value = 0xFFFFFFFF;
+  //Moottorit
   pinMode(dir1PinA, OUTPUT);
   pinMode(dir2PinA, OUTPUT);
   pinMode(speedPinA, OUTPUT);
@@ -47,7 +42,10 @@ void setup(){
   pinMode(speedPinB, OUTPUT);
   speed = 255;
   dir = 1;
-  irrecv.enableIRIn(); // Start the receiver
+  irrecv.enableIRIn(); // Start the IR receiver
+  //Ultraääni
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
 }
 
 void loop() {
@@ -66,6 +64,7 @@ void loop() {
     
     analogWrite(speedPinA,255 - speed);
     analogWrite(speedPinB,255 - speed);
+    
     if(dir == 1)
     {
       digitalWrite(dir1PinA, LOW); //Kääntää eteenpäin
@@ -82,6 +81,16 @@ void loop() {
     }
     irrecv.resume(); // Receive the next value
   }
+  
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  duration = pulseIn(echoPin, HIGH);
+  distance = (duration/2) / 29.1;    
+  if(distance <= minDistance){Stop();}
+  delay(10);
 }
 void Stop()
 {
