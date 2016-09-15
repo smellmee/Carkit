@@ -29,6 +29,7 @@ int trigPin = 13;
 int echoPin = 12;
 unsigned long timestamp = 0;
 long duration, distance;
+int crashTreshold = 15;
 decode_results results, OK, UP, DOWN, RIGHT, LEFT, ONE, TWO, THREE, STAR, CONTINUOUS, STOP, old_value;
 
 void setup(){
@@ -63,6 +64,32 @@ void setup(){
 void loop() {
   if(radar)
   {
+    digitalWrite(trigPin, LOW);
+    //delayMicroseconds(2);
+    digitalWrite(trigPin, HIGH);
+    //delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
+    duration = pulseIn(echoPin, HIGH, 10000); //Tunnistaa 8cm asti
+    timestamp = millis();
+    distance = (duration * 0.5) * 0.03436426116;
+    Serial.println(distance);
+    if(distance < crashTreshold)
+    {
+      dir = 0;
+      speed = 255;
+
+      for(int i = millis(); i <= (millis() + 500); i++)
+      {
+            digitalWrite(dir1PinA, HIGH); // Kääntää taaksepäin
+            digitalWrite(dir2PinA, LOW);
+            digitalWrite(dir1PinB, LOW);
+            digitalWrite(dir2PinB, HIGH);
+            analogWrite(speedPinA, speed);
+            analogWrite(speedPinB, speed);
+      }
+      speed = 0;
+      dir = 4;
+    }
     if(servopos < 180 && servoDir == 0) //Jos alle 180 & liikkuu ylös, +1
     {
       radarServo.write(servopos);
@@ -91,18 +118,8 @@ void loop() {
     //Jos 180, käännä suunta
     //Jos alle 180 & liikkuu alas, -1
     //Jos 0, käännä suunta
-    //delay(15);
-        
-    
+    delay(15);
   }
-  digitalWrite(trigPin, LOW);
-    //delayMicroseconds(2);
-    digitalWrite(trigPin, HIGH);
-    //delayMicroseconds(10);
-    digitalWrite(trigPin, LOW);
-    duration = pulseIn(echoPin, HIGH);
-    timestamp = millis();
-    distance = (duration * 0.5) * 0.03436426116;
   if (irrecv.decode(&results)) 
   {
     lastPress = millis();
