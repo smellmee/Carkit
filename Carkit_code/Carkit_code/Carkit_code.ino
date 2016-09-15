@@ -1,7 +1,7 @@
-/*Written by Tatu Piippo on 1.9.2016*/
+#include <Servo.h>
 
+/*T.V. Tatu Piippo 9v*/
 #include <IRremote.h>
-
 //motor A
 int dir1PinA = 2;
 int dir2PinA = 3;
@@ -10,13 +10,25 @@ int speedPinA = 9;
 int dir1PinB = 4;
 int dir2PinB = 5;
 int speedPinB = 10;
+//Nopeus & Suunta
 int speed;
 int dir;
+//Kaukosäädin
 int RECV_PIN = 11;
 long unsigned int IRcode, gap, lastPress, timeoutDelay;
-
 IRrecv irrecv(RECV_PIN);
-
+//harpake
+Servo radarServo;
+int servoPin = 6;
+int servopos = 90;
+int servoDir = 0;
+int servoStep = 10;
+boolean radar = false;
+//Ultraäänisensori
+int trigPin = 13;
+int echoPin = 12;
+unsigned long timestamp = 0;
+long duration, distance;
 decode_results results, OK, UP, DOWN, RIGHT, LEFT, ONE, TWO, THREE, STAR, CONTINUOUS, STOP, old_value;
 
 void setup(){
@@ -38,13 +50,59 @@ void setup(){
   pinMode(dir1PinB, OUTPUT);
   pinMode(dir2PinB, OUTPUT);
   pinMode(speedPinB, OUTPUT);
+  pinMode(servoPin, OUTPUT);
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
   speed = 255;
   dir = 4;
   irrecv.enableIRIn(); // Start the receiver
   timeoutDelay = 100;
+  radarServo.attach(servoPin);
 }
 
 void loop() {
+  if(radar)
+  {
+    if(servopos < 180 && servoDir == 0) //Jos alle 180 & liikkuu ylös, +1
+    {
+      radarServo.write(servopos);
+      servopos += servoStep;
+    }
+    else if(servopos > 0 && servoDir == 1) // Jos suunta alas & value yli 0, -1
+    {
+      radarServo.write(servopos);
+      servopos -= servoStep;
+    }
+    else if(servopos == 180 || servopos == 0) //Jos 180 tai 0, käännä suunta
+    {
+      radarServo.write(servopos);
+      if(servoDir == 0)
+      {
+        servoDir = 1;
+        servopos -= servoStep;
+      }
+      else if(servoDir == 1)
+      {
+         servoDir = 0;
+         servopos += servoStep;
+      }
+    }
+    //Jos alle 180 & liikkuu ylös, +1
+    //Jos 180, käännä suunta
+    //Jos alle 180 & liikkuu alas, -1
+    //Jos 0, käännä suunta
+    //delay(15);
+        
+    
+  }
+  digitalWrite(trigPin, LOW);
+    //delayMicroseconds(2);
+    digitalWrite(trigPin, HIGH);
+    //delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
+    duration = pulseIn(echoPin, HIGH);
+    timestamp = millis();
+    distance = (duration * 0.5) * 0.03436426116;
   if (irrecv.decode(&results)) 
   {
     lastPress = millis();
@@ -52,7 +110,7 @@ void loop() {
     if(results.value == DOWN.value){old_value.value = results.value; dir = 0;}
     if(results.value == LEFT.value){old_value.value = results.value; dir = 3;}
     if(results.value == RIGHT.value){old_value.value = results.value; dir = 2;}
-    
+    if(results.value == ONE.value){if(!radar){radar = true;}else{radar = false; servopos = 90; radarServo.write(servopos); delay(15);}}
     if(results.value == CONTINUOUS.value)
     { 
       Serial.println("CONTINUOUS");
@@ -79,50 +137,45 @@ void loop() {
     }
     irrecv.resume(); // Receive the next value
   }
-  /*Serial.print("Millis:  ");
-  Serial.println(millis());
-  Serial.print("LastPress:  ");
-  Serial.println(lastPress);*/
   if((millis() - lastPress) >= timeoutDelay)
   {
     Stop();
   }
   
-    analogWrite(speedPinA, speed);
-    analogWrite(speedPinB, speed);
-    
-    if(dir == 0)
-    {
-    digitalWrite(dir1PinA, HIGH); // Kääntää taaksepäin
-    digitalWrite(dir2PinA, LOW);
-    digitalWrite(dir1PinB, LOW);
-    digitalWrite(dir2PinB, HIGH);
-    }
-    else if(dir == 1)
-    {
-    digitalWrite(dir1PinA, LOW); //Kääntää eteenpäin
-    digitalWrite(dir2PinA, HIGH); 
-    digitalWrite(dir1PinB, HIGH);
-    digitalWrite(dir2PinB, LOW);
-    }
-    else if(dir == 2)
-    {
-    digitalWrite(dir1PinA, HIGH); // Kääntää vasempaan
-    digitalWrite(dir2PinA, LOW);
-    digitalWrite(dir1PinB, HIGH);
-    digitalWrite(dir2PinB, LOW);
-    }
-    else if(dir == 3)
-    {
-    digitalWrite(dir1PinA, LOW); // Kääntää oikeaan
-    digitalWrite(dir2PinA, HIGH);
-    digitalWrite(dir1PinB, LOW);
-    digitalWrite(dir2PinB, HIGH);
-    }
-    else
-    {
-      Stop();
-    }
+  if(dir == 0)
+  {
+  digitalWrite(dir1PinA, HIGH); // Kääntää taaksepäin
+  digitalWrite(dir2PinA, LOW);
+  digitalWrite(dir1PinB, LOW);
+  digitalWrite(dir2PinB, HIGH);
+  }
+  else if(dir == 1)
+  {
+  digitalWrite(dir1PinA, LOW); //Kääntää eteenpäin
+  digitalWrite(dir2PinA, HIGH); 
+  digitalWrite(dir1PinB, HIGH);
+  digitalWrite(dir2PinB, LOW);
+  }
+  else if(dir == 2)
+  {
+  digitalWrite(dir1PinA, HIGH); // Kääntää vasempaan
+  digitalWrite(dir2PinA, LOW);
+  digitalWrite(dir1PinB, HIGH);
+  digitalWrite(dir2PinB, LOW);
+  }
+  else if(dir == 3)
+  {
+  digitalWrite(dir1PinA, LOW); // Kääntää oikeaan
+  digitalWrite(dir2PinA, HIGH);
+  digitalWrite(dir1PinB, LOW);
+  digitalWrite(dir2PinB, HIGH);
+  }
+  else
+  {
+    Stop();
+  }
+  analogWrite(speedPinA, speed);
+  analogWrite(speedPinB, speed);
 }
 void Stop()
 {
