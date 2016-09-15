@@ -73,22 +73,11 @@ void loop() {
     timestamp = millis();
     distance = (duration * 0.5) * 0.03436426116;
     Serial.println(distance);
-    if(distance < crashTreshold)
+    if(distance < crashTreshold && distance != 0)
     {
-      dir = 0;
-      speed = 255;
-
-      for(int i = millis(); i <= (millis() + 500); i++)
-      {
-            digitalWrite(dir1PinA, HIGH); // Kääntää taaksepäin
-            digitalWrite(dir2PinA, LOW);
-            digitalWrite(dir1PinB, LOW);
-            digitalWrite(dir2PinB, HIGH);
-            analogWrite(speedPinA, speed);
-            analogWrite(speedPinB, speed);
-      }
-      speed = 0;
+      radar = false;
       dir = 4;
+      speed = 255;
     }
     if(servopos < 180 && servoDir == 0) //Jos alle 180 & liikkuu ylös, +1
     {
