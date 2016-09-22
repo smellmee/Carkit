@@ -24,6 +24,8 @@ int servopos = 90;
 int servoDir = 0;
 int servoStep = 10;
 boolean radar = false;
+boolean STOPFORTHELOVEOFGOD = false;
+boolean spinServo = false;
 //Ultraäänisensori
 int trigPin = 13;
 int echoPin = 12;
@@ -83,7 +85,8 @@ void loop() {
     if(results.value == DOWN.value){old_value.value = results.value; dir = 0;}
     if(results.value == LEFT.value){old_value.value = results.value; dir = 3;}
     if(results.value == RIGHT.value){old_value.value = results.value; dir = 2;}
-    if(results.value == ONE.value){if(!radar){radar = true;}else{radar = false; servopos = 90; radarServo.write(servopos); delay(15);}}
+    if(results.value == ONE.value){if(!radar){radar = true;}else{radar = false; servopos = 90; radarServo.write(servopos); STOPFORTHELOVEOFGOD = false; delay(15);}}
+    if(results.value == TWO.value){if(spinServo){spinServo = false; servopos = 90; radarServo.write(servopos);}else{spinServo = true;}}
     if(results.value == CONTINUOUS.value)
     { 
       Serial.println("CONTINUOUS");
@@ -116,7 +119,11 @@ void loop() {
   }
   
   driveTo(); //Ajaa dir mukaiseen suuntaa
-  
+  if(STOPFORTHELOVEOFGOD){
+   if(dir == 1){
+    Stop(); 
+   }
+  }
   analogWrite(speedPinA, speed);
   analogWrite(speedPinB, speed);
 }
@@ -174,32 +181,36 @@ void doRadarThings(){
     Serial.println(distance);
     if(distance < crashTreshold && distance != 0)
     {
-      radar = false;
-      dir = 4;
-      speed = 0;
+      STOPFORTHELOVEOFGOD = true;
+      /*dir = 4;
+      speed = 0;*/
+    }else{
+     STOPFORTHELOVEOFGOD = false;
     }
-    if(servopos < 180 && servoDir == 0) //Jos alle 180 & liikkuu ylös, +1
-    {
-      radarServo.write(servopos);
-      servopos += servoStep;
-    }
-    else if(servopos > 0 && servoDir == 1) // Jos suunta alas & value yli 0, -1
-    {
-      radarServo.write(servopos);
-      servopos -= servoStep;
-    }
-    else if(servopos == 180 || servopos == 0) //Jos 180 tai 0, käännä suunta
-    {
-      radarServo.write(servopos);
-      if(servoDir == 0)
+    if(spinServo){
+      if(servopos < 180 && servoDir == 0) //Jos alle 180 & liikkuu ylös, +1
       {
-        servoDir = 1;
+        radarServo.write(servopos);
+        servopos += servoStep;
+      }
+      else if(servopos > 0 && servoDir == 1) // Jos suunta alas & value yli 0, -1
+      {
+        radarServo.write(servopos);
         servopos -= servoStep;
       }
-      else if(servoDir == 1)
+      else if(servopos == 180 || servopos == 0) //Jos 180 tai 0, käännä suunta
       {
-         servoDir = 0;
-         servopos += servoStep;
+        radarServo.write(servopos);
+        if(servoDir == 0)
+        {
+          servoDir = 1;
+          servopos -= servoStep;
+        }
+        else if(servoDir == 1)
+        {
+           servoDir = 0;
+           servopos += servoStep;
+        }
       }
     }
     //Jos alle 180 & liikkuu ylös, +1
