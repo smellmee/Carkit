@@ -34,6 +34,7 @@ decode_results results, OK, UP, DOWN, RIGHT, LEFT, ONE, TWO, THREE, STAR, CONTIN
 
 void setup(){
   Serial.begin(9600);
+  Serial.print("AT+NAMESanik"); //Nimeää bluetooth laitteen
   UP.value = 0xFF629D;
   OK.value = 0xFF02FD;
   DOWN.value = 0xFFA857;
@@ -62,53 +63,19 @@ void setup(){
 }
 
 void loop() {
+  
+  if(Serial.available())
+  {//if there is data being recieved
+    dir = Serial.read(); //read it
+    speed = 255;
+    driveTo(); //Ajaa dir mukaiseen suuntaa
+  }
+  
   if(radar)
   {
-    digitalWrite(trigPin, LOW);
-    //delayMicroseconds(2);
-    digitalWrite(trigPin, HIGH);
-    //delayMicroseconds(10);
-    digitalWrite(trigPin, LOW);
-    duration = pulseIn(echoPin, HIGH, 10000); //Tunnistaa 8cm asti
-    timestamp = millis();
-    distance = (duration * 0.5) * 0.03436426116;
-    Serial.println(distance);
-    if(distance < crashTreshold && distance != 0)
-    {
-      radar = false;
-      dir = 4;
-      speed = 255;
-    }
-    if(servopos < 180 && servoDir == 0) //Jos alle 180 & liikkuu ylös, +1
-    {
-      radarServo.write(servopos);
-      servopos += servoStep;
-    }
-    else if(servopos > 0 && servoDir == 1) // Jos suunta alas & value yli 0, -1
-    {
-      radarServo.write(servopos);
-      servopos -= servoStep;
-    }
-    else if(servopos == 180 || servopos == 0) //Jos 180 tai 0, käännä suunta
-    {
-      radarServo.write(servopos);
-      if(servoDir == 0)
-      {
-        servoDir = 1;
-        servopos -= servoStep;
-      }
-      else if(servoDir == 1)
-      {
-         servoDir = 0;
-         servopos += servoStep;
-      }
-    }
-    //Jos alle 180 & liikkuu ylös, +1
-    //Jos 180, käännä suunta
-    //Jos alle 180 & liikkuu alas, -1
-    //Jos 0, käännä suunta
-    delay(15);
+    doRadarThings();
   }
+  
   if (irrecv.decode(&results)) 
   {
     lastPress = millis();
@@ -148,7 +115,20 @@ void loop() {
     Stop();
   }
   
-  if(dir == 0)
+  driveTo(); //Ajaa dir mukaiseen suuntaa
+  
+  analogWrite(speedPinA, speed);
+  analogWrite(speedPinB, speed);
+}
+
+void Stop()
+{
+  speed = 0;
+  dir = 4;
+}
+
+void driveTo(){
+if(dir == 0)
   {
   digitalWrite(dir1PinA, HIGH); // Kääntää taaksepäin
   digitalWrite(dir2PinA, LOW);
@@ -180,11 +160,52 @@ void loop() {
   {
     Stop();
   }
-  analogWrite(speedPinA, speed);
-  analogWrite(speedPinB, speed);
 }
-void Stop()
-{
-  speed = 0;
-  dir = 4;
+
+void doRadarThings(){
+    digitalWrite(trigPin, LOW);
+    //delayMicroseconds(2);
+    digitalWrite(trigPin, HIGH);
+    //delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
+    duration = pulseIn(echoPin, HIGH, 10000); //Tunnistaa 8cm asti
+    timestamp = millis();
+    distance = (duration * 0.5) * 0.03436426116;
+    Serial.println(distance);
+    if(distance < crashTreshold && distance != 0)
+    {
+      radar = false;
+      dir = 4;
+      speed = 0;
+    }
+    if(servopos < 180 && servoDir == 0) //Jos alle 180 & liikkuu ylös, +1
+    {
+      radarServo.write(servopos);
+      servopos += servoStep;
+    }
+    else if(servopos > 0 && servoDir == 1) // Jos suunta alas & value yli 0, -1
+    {
+      radarServo.write(servopos);
+      servopos -= servoStep;
+    }
+    else if(servopos == 180 || servopos == 0) //Jos 180 tai 0, käännä suunta
+    {
+      radarServo.write(servopos);
+      if(servoDir == 0)
+      {
+        servoDir = 1;
+        servopos -= servoStep;
+      }
+      else if(servoDir == 1)
+      {
+         servoDir = 0;
+         servopos += servoStep;
+      }
+    }
+    //Jos alle 180 & liikkuu ylös, +1
+    //Jos 180, käännä suunta
+    //Jos alle 180 & liikkuu alas, -1
+    //Jos 0, käännä suunta
+    delay(15);
 }
+
