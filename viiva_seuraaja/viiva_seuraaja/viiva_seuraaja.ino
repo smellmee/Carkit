@@ -28,7 +28,6 @@ short int middleSensorPreviousValue = 0;
 short int rightSensorPreviousValue = 0;
 
 short int lineToFollow = 1; //0 on valkoinen 1 on musta
-short int delayTime =
 //Kaukosäädin
 int RECV_PIN = 11;
 long unsigned int IRcode, gap, lastPress, timeoutDelay;
@@ -98,21 +97,21 @@ void loop()
      digitalWrite(dir2PinA, LOW);
      digitalWrite(dir1PinB, HIGH);
      digitalWrite(dir2PinB, LOW);
-     speed = 140;
+     speed = 160;
     }else if(leftSensorValue == lineToFollow && rightSensorValue != lineToFollow && middleSensorValue != lineToFollow){
       //Kääntyy oikealle
       digitalWrite(dir1PinA, LOW); // Kääntää oikeaan
       digitalWrite(dir2PinA, HIGH);
       digitalWrite(dir1PinB, LOW);
       digitalWrite(dir2PinB, HIGH);
-      speed = 140;
+      speed = 160;
     }else if(middleSensorValue != lineToFollow && rightSensorValue != lineToFollow && leftSensorValue != lineToFollow){
      //Sensori on kadottanut valkoisen viivan kokonaan. Ajaa taaksepäin? 
      digitalWrite(dir1PinA, HIGH); // Kääntää taaksepäin
      digitalWrite(dir2PinA, LOW);
      digitalWrite(dir1PinB, LOW);
      digitalWrite(dir2PinB, HIGH);
-     speed = 85;
+     speed = 105;
     }else{
     //Joko kaikki sensorit näkee viivan tai pelkästään keskimmäinen sensori näkee viivan
     //Auto ajaa siis eteenpäin 
@@ -120,7 +119,7 @@ void loop()
     digitalWrite(dir2PinA, HIGH); 
     digitalWrite(dir1PinB, HIGH);
     digitalWrite(dir2PinB, LOW);
-    speed = 85;
+    speed = 105;
     }
     analogWrite(generalSpeedPin, speed);
     delay(50);
