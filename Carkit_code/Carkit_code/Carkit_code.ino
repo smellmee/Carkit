@@ -5,11 +5,13 @@
 //motor A
 int dir1PinA = 2;
 int dir2PinA = 3;
-int speedPinA = 9;
+//int speedPinA = 9;
 //motor B
 int dir1PinB = 4;
 int dir2PinB = 5;
-int speedPinB = 10;
+//int speedPinB = 10;
+int generalSpeedPin = 10;
+
 //Nopeus & Suunta
 int speed;
 int dir;
@@ -34,6 +36,18 @@ long duration, distance;
 int crashTreshold = 15;
 decode_results results, OK, UP, DOWN, RIGHT, LEFT, ONE, TWO, THREE, STAR, CONTINUOUS, STOP, old_value;
 
+//Viivan seuraaja
+int lineReaderLeftPin = 7;
+int lineReaderMiddlePin = 8;
+int lineReaderRightPin = 9;
+
+short int leftSensorValue = 0;
+short int middleSensorValue = 0;
+short int rightSensorValue = 0;
+
+short int lineToFollow = 1; //0 on valkoinen 1 on musta
+boolean followLine = false;
+
 void setup(){
   Serial.begin(9600);
   Serial.print("AT+NAMESanik"); //Nimeää bluetooth laitteen
@@ -50,13 +64,14 @@ void setup(){
   STOP.value = 0;
   pinMode(dir1PinA, OUTPUT);
   pinMode(dir2PinA, OUTPUT);
-  pinMode(speedPinA, OUTPUT);
+  //pinMode(speedPinA, OUTPUT);
   pinMode(dir1PinB, OUTPUT);
   pinMode(dir2PinB, OUTPUT);
-  pinMode(speedPinB, OUTPUT);
+  //pinMode(speedPinB, OUTPUT);
   pinMode(servoPin, OUTPUT);
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
+  pinMode(generalSpeedPin, OUTPUT);
   speed = 255;
   dir = 4;
   irrecv.enableIRIn(); // Start the receiver
@@ -81,15 +96,18 @@ void loop() {
   if (irrecv.decode(&results)) 
   {
     lastPress = millis();
+    if(results.value != STAR.value && results.value != CONTINUOUS.value){followLine = false;}
     if(results.value == UP.value){old_value.value = results.value; dir = 1;}
     if(results.value == DOWN.value){old_value.value = results.value; dir = 0;}
     if(results.value == LEFT.value){old_value.value = results.value; dir = 3;}
     if(results.value == RIGHT.value){old_value.value = results.value; dir = 2;}
     if(results.value == ONE.value){if(!radar){radar = true;}else{radar = false; servopos = 90; radarServo.write(servopos); STOPFORTHELOVEOFGOD = false; delay(15);}}
     if(results.value == TWO.value){if(spinServo){spinServo = false; servopos = 90; radarServo.write(servopos);}else{spinServo = true;}}
+    if(results.value == STAR.value){if(followLine == true){followLine = false;}else{followLine = true;}}
+    
     if(results.value == CONTINUOUS.value)
     { 
-      Serial.println("CONTINUOUS");
+      //Serial.println("CONTINUOUS");
       if(old_value.value == UP.value)
       {
         dir = 1;
@@ -113,7 +131,10 @@ void loop() {
     }
     irrecv.resume(); // Receive the next value
   }
-  if((millis() - lastPress) >= timeoutDelay)
+  if(followLine){
+   followLineLogic();//Käyttää viivanseuraamis logiikkaa ajamiseen 
+  }
+  if((millis() - lastPress) >= timeoutDelay && followLine == false)
   {
     Stop();
   }
@@ -124,8 +145,9 @@ void loop() {
     Stop(); 
    }
   }
-  analogWrite(speedPinA, speed);
-  analogWrite(speedPinB, speed);
+  //analogWrite(speedPinA, speed);
+  //analogWrite(speedPinB, speed);
+  analogWrite(generalSpeedPin, speed);
 }
 
 void Stop()
@@ -219,4 +241,54 @@ void doRadarThings(){
     //Jos 0, käännä suunta
     delay(15);
 }
+
+void followLineLogic(){
+  leftSensorValue = digitalRead(lineReaderLeftPin); // Arvo on 0 kun valkoista ja 1 jos mustaa
+    middleSensorValue = digitalRead(lineReaderMiddlePin);
+    rightSensorValue = digitalRead(lineReaderRightPin);
+    
+    /*Serial.print("Left: ");
+    Serial.print(leftSensorValue); 
+     Serial.print("  Mid: ");
+    Serial.print(middleSensorValue);
+     Serial.print("  right: ");
+    Serial.println(rightSensorValue);*/
+    
+    
+    //Käännä vaan toista takapuolta
+    if(rightSensorValue == lineToFollow && leftSensorValue != lineToFollow && middleSensorValue != lineToFollow)
+    {
+     //Kääntyy vasempaan 
+     digitalWrite(dir1PinA, HIGH); // Kääntää vasempaan
+     digitalWrite(dir2PinA, LOW);
+     digitalWrite(dir1PinB, HIGH);
+     digitalWrite(dir2PinB, LOW);
+     speed = 160;
+    }else if(leftSensorValue == lineToFollow && rightSensorValue != lineToFollow && middleSensorValue != lineToFollow){
+      //Kääntyy oikealle
+      digitalWrite(dir1PinA, LOW); // Kääntää oikeaan
+      digitalWrite(dir2PinA, HIGH);
+      digitalWrite(dir1PinB, LOW);
+      digitalWrite(dir2PinB, HIGH);
+      speed = 160;
+    }else if(middleSensorValue != lineToFollow && rightSensorValue != lineToFollow && leftSensorValue != lineToFollow){
+     //Sensori on kadottanut valkoisen viivan kokonaan. Ajaa taaksepäin? 
+     digitalWrite(dir1PinA, HIGH); // Kääntää taaksepäin
+     digitalWrite(dir2PinA, LOW);
+     digitalWrite(dir1PinB, LOW);
+     digitalWrite(dir2PinB, HIGH);
+     speed = 105;
+    }else{
+    //Joko kaikki sensorit näkee viivan tai pelkästään keskimmäinen sensori näkee viivan
+    //Auto ajaa siis eteenpäin 
+    digitalWrite(dir1PinA, LOW); //Kääntää eteenpäin
+    digitalWrite(dir2PinA, HIGH); 
+    digitalWrite(dir1PinB, HIGH);
+    digitalWrite(dir2PinB, LOW);
+    speed = 105;
+    }
+    analogWrite(generalSpeedPin, speed);
+    delay(50);
+    //analogWrite(speedPinB, speed);
+  }
 

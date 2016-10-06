@@ -23,10 +23,6 @@ short int leftSensorValue = 0;
 short int middleSensorValue = 0;
 short int rightSensorValue = 0;
 
-short int leftSensorPreviousValue = 0;
-short int middleSensorPreviousValue = 0;
-short int rightSensorPreviousValue = 0;
-
 short int lineToFollow = 1; //0 on valkoinen 1 on musta
 //Kaukosäädin
 int RECV_PIN = 11;
@@ -69,9 +65,10 @@ void loop()
         if(followLine == true){
           followLine = false;
       }else{
-       followLine = true; 
+       followLine = true;
       }
      }
+     irrecv.resume();
   }
   
   if(followLine){
@@ -79,8 +76,6 @@ void loop()
     middleSensorValue = digitalRead(lineReaderMiddlePin);
     rightSensorValue = digitalRead(lineReaderRightPin);
     
-    /*if(leftSensorValue != leftSensorPreviousValue|| middleSensorValue != middleSensorPreviousValue|| rightSensorValue != rightSensorPreviousValue)
-    { }*/
     /*Serial.print("Left: ");
     Serial.print(leftSensorValue); 
      Serial.print("  Mid: ");
@@ -124,10 +119,15 @@ void loop()
     analogWrite(generalSpeedPin, speed);
     delay(50);
     //analogWrite(speedPinB, speed);
-  }/*else{
-    analogWrite(generalSpeedPin, 0);
-  }*/
-  leftSensorPreviousValue = leftSensorValue;
-  middleSensorPreviousValue = middleSensorValue;
-  rightSensorPreviousValue = rightSensorValue;
+  }else{
+   Stop(); 
+  }
 }
+
+void Stop()
+{
+  speed = 0;
+  analogWrite(generalSpeedPin, speed);
+  dir = 4;
+}
+
