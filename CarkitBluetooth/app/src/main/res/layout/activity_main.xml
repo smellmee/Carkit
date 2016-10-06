@@ -22,43 +22,48 @@
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true" />
 
-    <ImageView
-        android:id="@+id/upButt"
+    <ImageButton
+        android:id="@+id/downButt"
         android:layout_width="@dimen/buttonsize"
         android:layout_height="@dimen/buttonsize"
         android:layout_below="@+id/view1"
         android:layout_centerHorizontal="true"
-        android:src="@drawable/downarrow" />
+        android:background="@drawable/downarrow"
+        android:layout_marginTop="30dp"/>
 
-    <ImageView
-        android:id="@+id/downButt"
+    <ImageButton
+        android:id="@+id/upButt"
         android:layout_width="@dimen/buttonsize"
         android:layout_height="@dimen/buttonsize"
         android:layout_above="@+id/view1"
         android:layout_centerHorizontal="true"
-        android:src="@drawable/uparrow" />
+        android:background="@drawable/uparrow"
+        android:layout_marginBottom="30dp"/>
 
-    <ImageView
+    <ImageButton
         android:id="@+id/rightButt"
         android:layout_width="@dimen/buttonsize"
         android:layout_height="@dimen/buttonsize"
         android:layout_centerVertical="true"
         android:layout_toRightOf="@+id/view1"
-        android:src="@drawable/rightarrow" />
+        android:background="@drawable/rightarrow"
+        android:layout_marginLeft="30dp"/>
 
-    <ImageView
+    <ImageButton
         android:id="@+id/leftButt"
         android:layout_width="@dimen/buttonsize"
         android:layout_height="@dimen/buttonsize"
         android:layout_centerVertical="true"
         android:layout_toLeftOf="@+id/view1"
-        android:src="@drawable/leftarrow" />
+        android:background="@drawable/leftarrow"
+        android:layout_marginRight="30dp"/>
     <SeekBar
         android:id="@+id/speedSlider"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:max="255" />
+        android:max="255"
+        android:layout_marginBottom="20dp"/>
     <TextView
         android:id="@+id/speedText"
         android:layout_width="wrap_content"
