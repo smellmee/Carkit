@@ -26,9 +26,14 @@ int servoPin = 10;
 int servopos = 90;
 int servoDir = 0;
 int servoStep = 10;
+int servolimit = 0;
 boolean radar = false;
 boolean STOPFORTHELOVEOFGOD = false;
 boolean spinServo = false;
+
+int rightDirectionDistance;
+int leftDirectionDistance;
+
 //Ultraäänisensori
 int trigPin = 13;
 int echoPin = 12;
@@ -84,16 +89,13 @@ void setup(){
 }
   
 void loop() {
-  /*if(Serial.available())
-  {//if there is data being recieved
-    dir = Serial.read(); //read it
-    speed = 255;
-    driveTo(); //Ajaa dir mukaiseen suuntaa
-  }*/
+ 
   
   if(radar)
   {
-    doRadarThings();
+    driveStraightWhileScanning(); 
+    rightDirectionDistance = 0;
+    leftDirectionDistance = 0;
   }
   
   if (irrecv.decode(&results)) 
@@ -106,7 +108,7 @@ void loop() {
     if(results.value == DOWN.value){old_value.value = results.value; dir = 0;}
     if(results.value == LEFT.value){old_value.value = results.value; dir = 3;}
     if(results.value == RIGHT.value){old_value.value = results.value; dir = 2;}
-    if(results.value == ONE.value){if(!radar){radar = true;}else{radar = false; servopos = 90; radarServo.write(servopos); STOPFORTHELOVEOFGOD = false; delay(15);}}
+    if(results.value == ONE.value){if(!radar){radar = true;}else{radar = false; servopos = 90; radarServo.write(servopos); delay(15);}}
     if(results.value == TWO.value){if(spinServo){spinServo = false; servopos = 90; radarServo.write(servopos);}else{spinServo = true;}}
     if(results.value == STAR.value){if(followLine == true){followLine = false;}else{followLine = true;}}
     if(results.value == HASHTAG.value){speedBoost+=10;}
@@ -146,13 +148,20 @@ void loop() {
   {
     Stop();
   }
-  
+   if(Serial.available())
+  {//if there is data being recieved
+    char btdir = Serial.read(); //read it
+    dir = btdir - '0';
+    speed = 255;
+    driveTo(); //Ajaa dir mukaiseen suuntaa
+    lastPress = millis();
+  }
   driveTo(); //Ajaa dir mukaiseen suuntaa
-  if(STOPFORTHELOVEOFGOD){
+ /* if(STOPFORTHELOVEOFGOD){
    if(dir == 1){
     Stop(); 
    }
-  }
+  }*/
   //analogWrite(speedPinA, speed);
   //analogWrite(speedPinB, speed);
   int finalSpeed = speed + speedBoost; //Nopeuden säätöä varten tehty logiikka. Speedboost kertoo paljonko on manuaalisesti lisätty nopeutta
@@ -169,6 +178,14 @@ void Stop()
   speed = 0;
   speedBoost = 0;
   dir = 4;
+}
+
+void Stop2()
+{
+  speed = 0;
+  speedBoost = 0;
+  analogWrite(generalSpeedPin, speed);
+  delay(500);
 }
 
 void driveTo(){
@@ -188,14 +205,14 @@ if(dir == 0)
   }
   else if(dir == 2)
   {
-  digitalWrite(dir1PinA, HIGH); // Kääntää vasempaan
+  digitalWrite(dir1PinA, HIGH); // Kääntää oikeaan
   digitalWrite(dir2PinA, LOW);
   digitalWrite(dir1PinB, HIGH);
   digitalWrite(dir2PinB, LOW);
   }
   else if(dir == 3)
   {
-  digitalWrite(dir1PinA, LOW); // Kääntää oikeaan
+  digitalWrite(dir1PinA, LOW); // Kääntää vasempaan
   digitalWrite(dir2PinA, HIGH);
   digitalWrite(dir1PinB, LOW);
   digitalWrite(dir2PinB, HIGH);
@@ -206,7 +223,23 @@ if(dir == 0)
   }
 }
 
-void doRadarThings(){
+void driveStraightWhileScanning()	{    //Ajaa suoraan scannaten
+
+    Serial.println("driveStraightWhileScanning");
+    speed = 120; 
+    digitalWrite(dir1PinA, LOW); //Ajaa eteenpäin
+    digitalWrite(dir2PinA, HIGH); 
+    digitalWrite(dir1PinB, HIGH);
+    digitalWrite(dir2PinB, LOW);
+  
+    analogWrite(generalSpeedPin, speed);
+    
+    doRadarThings();
+}
+
+void doRadarThings()	{
+	  
+    spinServo = false;
     digitalWrite(trigPin, LOW);
     //delayMicroseconds(2);
     digitalWrite(trigPin, HIGH);
@@ -215,15 +248,19 @@ void doRadarThings(){
     duration = pulseIn(echoPin, HIGH, 10000); //Tunnistaa 8cm asti
     timestamp = millis();
     distance = (duration * 0.5) * 0.03436426116;
-    Serial.println(distance);
-    if(distance < crashTreshold && distance != 0)
+    //Serial.println(distance);
+    if(distance < crashTreshold && distance != 0) //Seinä edessä
     {
-      STOPFORTHELOVEOFGOD = true;
-      /*dir = 4;
-      speed = 0;*/
-    }else{
-     STOPFORTHELOVEOFGOD = false;
+	  Stop2();
+      servopos = 90;
+      radarServo.write(servopos);
+      spinServo = true;
+      }
+      else{
+     driveStraightWhileScanning();
     }
+    
+    
     if(spinServo){
       if(servopos < 180 && servoDir == 0) //Jos alle 180 & liikkuu ylös, +1
       {
@@ -240,21 +277,76 @@ void doRadarThings(){
         radarServo.write(servopos);
         if(servoDir == 0)
         {
+          leftDirectionDistance = (duration * 0.5) * 0.03436426116;
           servoDir = 1;
           servopos -= servoStep;
+          servolimit++;
+          if(servolimit > 1){
+          Serial.println(servolimit);
+          radarServo.write(servopos);
+          determineDirection();
+        }
         }
         else if(servoDir == 1)
         {
-           servoDir = 0;
-           servopos += servoStep;
+          rightDirectionDistance = (duration * 0.5) * 0.03436426116;
+          servoDir = 0;
+          servopos += servoStep;
+          servolimit++;
+          if(servolimit > 1){
+          Serial.println(servolimit);
+          radarServo.write(servopos);
+          determineDirection();}
         }
       }
     }
-    //Jos alle 180 & liikkuu ylös, +1
-    //Jos 180, käännä suunta
-    //Jos alle 180 & liikkuu alas, -1
-    //Jos 0, käännä suunta
     delay(15);
+}
+
+void determineDirection(){
+  servolimit = 0;
+  spinServo = false;
+  //Serial.println(rightDirectionDistance);
+  //Serial.println(leftDirectionDistance);
+  servopos = 90;
+  radarServo.write(servopos);
+  if(rightDirectionDistance > leftDirectionDistance){
+    //Käänny oikealle
+      speed = 255;
+      analogWrite(generalSpeedPin, speed);
+      digitalWrite(dir1PinA, LOW); // Kääntää oikeaan
+      digitalWrite(dir2PinA, HIGH);
+      digitalWrite(dir1PinB, LOW);
+      digitalWrite(dir2PinB, HIGH);
+    delay(285);
+	driveStraightWhileScanning();    
+  }
+  else if(rightDirectionDistance < leftDirectionDistance){
+    //Käänny vasemmalle
+	  speed = 255;
+	  dir = 1;
+      analogWrite(generalSpeedPin, speed);
+      digitalWrite(dir1PinA, HIGH); // Kääntää vasempaan
+      digitalWrite(dir2PinA, LOW);
+      digitalWrite(dir1PinB, HIGH);
+      digitalWrite(dir2PinB, LOW);
+    //palaa driveStraightWhileScanning tilaan
+    delay(285);
+    driveStraightWhileScanning();
+  }
+  else {
+      //Käänny oikealle
+      speed = 255;
+      analogWrite(generalSpeedPin, speed);
+      digitalWrite(dir1PinA, HIGH); // Kääntää oikeaan
+      digitalWrite(dir2PinA, LOW);
+      digitalWrite(dir1PinB, HIGH);
+      digitalWrite(dir2PinB, LOW);
+    delay(285);
+	driveStraightWhileScanning();    
+    //determineDirection();
+    //driveStraightWhileScanning();
+  } 
 }
 
 void followLineLogic(){
@@ -267,21 +359,21 @@ void followLineLogic(){
     {
      //Kääntyy vasempaan 
      dir = 2;
-     speed = 160;
+     speed = 180;
     }else if(leftSensorValue == lineToFollow && rightSensorValue != lineToFollow && middleSensorValue != lineToFollow){
       //Kääntyy oikealle
       dir = 3;
-      speed = 160;
+      speed = 180;
     }else if(middleSensorValue != lineToFollow && rightSensorValue != lineToFollow && leftSensorValue != lineToFollow){
      //Sensori on kadottanut valkoisen viivan kokonaan. Ajaa taaksepäin? 
 
      dir = 0;
-     speed = 105;
+     speed = 115;
     }else{
     //Joko kaikki sensorit näkee viivan tai pelkästään keskimmäinen sensori näkee viivan
     //Auto ajaa siis eteenpäin 
     dir = 1;
-    speed = 105;
+    speed = 115;
     }
     //speed = 255;
     //analogWrite(generalSpeedPin, speed);
